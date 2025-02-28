@@ -18,24 +18,6 @@ const getBoardDepth = async (boardId: string): Promise<number> => {
     depthFromRoot++;
   }
 
-  // Calculate depth to deepest child
-  const calculateDepthToDeepestChild = async (id: string, currentDepth: number) => {
-    const [rows] = await pool.query("SELECT id FROM boards WHERE parentBoardId = ?", [id]);
-    const childBoards = rows as { id: string }[];
-
-    if (childBoards.length > 0) {
-      currentDepth++;
-      if (currentDepth > maxDepthToDeepestChild) {
-        maxDepthToDeepestChild = currentDepth;
-      }
-      for (const childBoard of childBoards) {
-        await calculateDepthToDeepestChild(childBoard.id, currentDepth);
-      }
-    }
-  };
-
-  await calculateDepthToDeepestChild(boardId, 1);
-
   return depthFromRoot + maxDepthToDeepestChild - 1;
 };
 
