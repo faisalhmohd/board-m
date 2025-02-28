@@ -45,3 +45,6 @@ docker-compose.override.yml
 # Misc
 .DS_Store
 Thumbs.db
+
+# DB Files
+db

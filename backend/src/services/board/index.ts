@@ -1,12 +1,12 @@
 import { randomUUID } from "crypto";
 import { pool } from "../../db";
 import { Board } from "./types";
-import { getAllChildBoards, getBoardDepth } from "./utils";
+import { getAllChildBoards, getBoardDepth, getBoardDepthFromRoot, getBoardDepthToDeepestChild } from "./utils";
 import { MAX_DEPTH } from "./constants";
 
 export const createBoard = async (name: string, description: string, parentBoardId?: string): Promise<Board> => {
   if (parentBoardId) {
-    const depth = await getBoardDepth(parentBoardId);
+    const depth = await getBoardDepthFromRoot(parentBoardId);
     if (depth >= MAX_DEPTH) {
       throw new Error(`Cannot create board. Maximum depth of ${MAX_DEPTH} levels exceeded.`);
     }
@@ -65,8 +65,8 @@ export const moveBoard = async (boardId: string, newParentBoardId?: string): Pro
     throw new Error("Board not found");
   }
 
-  const boardDepth = await getBoardDepth(boardId);
-  const newParentDepth = newParentBoardId ? await getBoardDepth(newParentBoardId) : 0;
+  const boardDepth = await getBoardDepthToDeepestChild(boardId);
+  const newParentDepth = newParentBoardId ? await getBoardDepthFromRoot(newParentBoardId) : 0;
 
   if (newParentDepth + boardDepth > MAX_DEPTH) {
     throw new Error(`Cannot move board. Maximum depth of ${MAX_DEPTH} levels exceeded.`);

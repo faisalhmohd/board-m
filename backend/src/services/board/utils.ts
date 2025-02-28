@@ -1,7 +1,7 @@
 import {pool} from "../../db";
 import { Board } from "./types";
 
-const getBoardDepth = async (boardId: string): Promise<number> => {
+const getBoardDepthFromRoot = async (boardId: string): Promise<number> => {
   let depthFromRoot = 1;
   let maxDepthToDeepestChild = 1;
   let currentBoardId = boardId;
@@ -32,4 +32,21 @@ const getAllChildBoards = async (parentBoardId: string): Promise<Board[]> => {
   return childBoards;
 };
 
-export { getBoardDepth, getAllChildBoards };
+const getBoardDepthToDeepestChild = async (boardId: string): Promise<number> => {
+  let maxDepthToDeepestChild = 1;
+  const [rows] = await pool.query("SELECT id FROM boards WHERE parentBoardId = ?", [boardId]);
+  const childBoards = rows as { id: string }[];
+  for (const childBoard of childBoards) {
+    const depthToDeepestChild = await getBoardDepthToDeepestChild(childBoard.id);
+    maxDepthToDeepestChild = Math.max(maxDepthToDeepestChild, depthToDeepestChild + 1);
+  }
+  return maxDepthToDeepestChild;
+};
+
+const getBoardDepth = async (boardId: string): Promise<number> => {
+  const depthFromRoot = await getBoardDepthFromRoot(boardId);
+  const depthToDeepestChild = await getBoardDepthToDeepestChild(boardId);
+  return depthFromRoot + depthToDeepestChild - 1;
+};
+
+export { getBoardDepth, getAllChildBoards, getBoardDepthFromRoot, getBoardDepthToDeepestChild };
