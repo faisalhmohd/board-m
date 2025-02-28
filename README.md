@@ -2,6 +2,8 @@
 
 This is a basic board management system that allows users to create, read, move, and delete boards
 
+![Demo](https://github.com/faisalhmohd/board-m/blob/main/recording.gif?raw=true)
+
 ## Overview
 
 This application uses the provided boilerplate but has been modified to include the following features:
