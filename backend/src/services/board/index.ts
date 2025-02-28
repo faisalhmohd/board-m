@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { pool } from "../../db";
 import { Board } from "./types";
-import { getAllChildBoards, getBoardDepth, getBoardDepthFromRoot, getBoardDepthToDeepestChild } from "./utils";
+import { getBoardDepthFromRoot, getBoardDepthToDeepestChild } from "./utils";
 import { MAX_DEPTH } from "./constants";
 
 export const createBoard = async (name: string, description: string, parentBoardId?: string): Promise<Board> => {
@@ -52,11 +52,21 @@ export const updateBoard = async (id: string, name: string, description: string,
 };
 
 export const deleteBoard = async (id: string): Promise<void> => {
-  const childBoards = await getAllChildBoards(id);
-  const boardIdsToDelete = childBoards.map(board => board.id);
-  boardIdsToDelete.push(id);
+  const deleteChildBoards = async (parentId: string) => {
+    const [rows] = await pool.query("SELECT id FROM boards WHERE parentBoardId = ?", [parentId]);
+    const childBoards = rows as { id: string }[];
 
-  await pool.query("DELETE FROM boards WHERE id IN (?)", [boardIdsToDelete]);
+    for (const childBoard of childBoards) {
+      await deleteChildBoards(childBoard.id);
+      await pool.query("DELETE FROM boards WHERE id = ?", [childBoard.id]);
+    }
+  };
+
+  // Start by deleting child boards of the given board
+  await deleteChildBoards(id);
+
+  // Finally, delete the parent board
+  await pool.query("DELETE FROM boards WHERE id = ?", [id]);
 };
 
 export const moveBoard = async (boardId: string, newParentBoardId?: string): Promise<void> => {
