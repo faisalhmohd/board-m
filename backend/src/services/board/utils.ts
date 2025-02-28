@@ -1,4 +1,5 @@
 import {pool} from "../../db";
+import { Board } from "./types";
 
 const getBoardDepth = async (boardId: string): Promise<number> => {
   let depthFromRoot = 1;
@@ -21,4 +22,14 @@ const getBoardDepth = async (boardId: string): Promise<number> => {
   return depthFromRoot + maxDepthToDeepestChild - 1;
 };
 
-export { getBoardDepth };
+const getAllChildBoards = async (parentBoardId: string): Promise<Board[]> => {
+  const [rows] = await pool.query("SELECT * FROM boards WHERE parentBoardId = ?", [parentBoardId]);
+  const childBoards = rows as Board[];
+  for (const childBoard of childBoards) {
+    const nestedChildBoards = await getAllChildBoards(childBoard.id);
+    childBoards.push(...nestedChildBoards);
+  }
+  return childBoards;
+};
+
+export { getBoardDepth, getAllChildBoards };

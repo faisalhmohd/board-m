@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
-import {pool} from "../../db";
+import { pool } from "../../db";
 import { Board } from "./types";
-import { getBoardDepth } from "./utils";
+import { getAllChildBoards, getBoardDepth } from "./utils";
 import { MAX_DEPTH } from "./constants";
 
 export const createBoard = async (name: string, description: string, parentBoardId?: string): Promise<Board> => {
@@ -52,7 +52,11 @@ export const updateBoard = async (id: string, name: string, description: string,
 };
 
 export const deleteBoard = async (id: string): Promise<void> => {
-  await pool.query("DELETE FROM boards WHERE id = ?", [id]);
+  const childBoards = await getAllChildBoards(id);
+  const boardIdsToDelete = childBoards.map(board => board.id);
+  boardIdsToDelete.push(id);
+
+  await pool.query("DELETE FROM boards WHERE id IN (?)", [boardIdsToDelete]);
 };
 
 export const moveBoard = async (boardId: string, newParentBoardId?: string): Promise<void> => {
